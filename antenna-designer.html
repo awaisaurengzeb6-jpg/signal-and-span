@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antenna Dimension Designer — Signal &amp; Span</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#121a24; --surface:#1b2530; --surface-2:#212d3a; --line:#2c3948;
+    --amber:#ffb020; --amber-dim:#8a6420; --teal:#4fd1c5;
+    --text:#e9edf2; --text-muted:#8fa0b3; --text-faint:#5c6c7d;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --sans:'IBM Plex Sans', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none;}
+  .grid-bg{
+    background-image:linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size:34px 34px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:0 28px;}
+  header{position:sticky;top:0;z-index:50;background:rgba(18,26,36,0.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .logo{font-family:var(--mono);font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px;}
+  .logo-mark{width:18px;height:18px;border:1.5px solid var(--amber);border-radius:50%;position:relative;}
+  .logo-mark::after{content:'';position:absolute;inset:4px;background:var(--amber);border-radius:50%;}
+  .back{font-family:var(--mono);font-size:13px;color:var(--text-muted);}
+  .back:hover{color:var(--amber);}
+
+  main{padding:56px 0 100px;}
+  .eyebrow{font-family:var(--mono);font-size:12px;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .eyebrow::before{content:'';width:26px;height:1px;background:var(--teal);}
+  h1{font-family:var(--mono);font-weight:700;font-size:clamp(26px,3.6vw,36px);margin-bottom:14px;letter-spacing:-0.01em;}
+  .sub{color:var(--text-muted);font-size:15.5px;max-width:600px;margin-bottom:44px;}
+
+  .layout{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);}
+  .panel{background:var(--ink);padding:36px;}
+
+  .field{margin-bottom:22px;}
+  label{display:block;font-family:var(--mono);font-size:12.5px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.02em;}
+  .field-row{display:flex;gap:10px;align-items:center;}
+  input[type=number], select{
+    width:100%;background:var(--surface);border:1px solid var(--line);color:var(--text);
+    font-family:var(--mono);font-size:15px;padding:12px 14px;border-radius:4px;
+    transition:border-color .15s;
+  }
+  input[type=number]:focus, select:focus{outline:none;border-color:var(--amber);}
+  .unit{font-family:var(--mono);font-size:13px;color:var(--text-faint);white-space:nowrap;}
+  select{cursor:pointer;}
+
+  .calc-btn{
+    width:100%;font-family:var(--mono);font-size:14.5px;font-weight:600;
+    background:var(--amber);color:#1a1206;border:none;padding:15px;border-radius:4px;
+    cursor:pointer;margin-top:8px;transition:background .15s, transform .15s;
+  }
+  .calc-btn:hover{background:#ffc04d;transform:translateY(-1px);}
+
+  .results-empty{
+    color:var(--text-faint);font-size:14px;font-family:var(--mono);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    height:100%;text-align:center;gap:10px;min-height:280px;
+  }
+
+  .result-row{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:16px 0;border-bottom:1px solid var(--line);
+  }
+  .result-row:last-of-type{border-bottom:none;}
+  .result-label{font-size:13.5px;color:var(--text-muted);}
+  .result-label .hint{display:block;font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+  .result-value{font-family:var(--mono);font-size:19px;font-weight:600;color:var(--teal);}
+  .result-value .unit-small{font-size:13px;color:var(--text-faint);margin-left:4px;}
+
+  .note{
+    margin-top:24px;padding:14px 16px;background:var(--surface-2);border-left:2px solid var(--amber);
+    font-size:13px;color:var(--text-muted);border-radius:0 4px 4px 0;
+  }
+
+  .method{
+    margin-top:56px;padding-top:36px;border-top:1px solid var(--line);
+  }
+  .method h2{font-family:var(--mono);font-size:18px;margin-bottom:14px;}
+  .method p{color:var(--text-muted);font-size:14.5px;margin-bottom:12px;max-width:680px;}
+  .method code{font-family:var(--mono);background:var(--surface);padding:2px 6px;border-radius:3px;color:var(--teal);font-size:13px;}
+
+  footer{border-top:1px solid var(--line);padding:30px 0;font-family:var(--mono);font-size:12px;color:var(--text-faint);}
+
+  @media (max-width:760px){
+    .layout{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="logo-mark"></span>SIGNAL &amp; SPAN</div>
+    <a href="index.html" class="back">← All tools</a>
+  </div>
+</header>
+
+<main class="grid-bg">
+  <div class="wrap">
+    <div class="eyebrow">Tool 01 — Antennas</div>
+    <h1>Antenna Dimension Designer</h1>
+    <p class="sub">Enter your target frequency and substrate properties. This calculates microstrip patch antenna dimensions using the Hammerstad–Jensen model — the same equations used to generate training data for data-driven surrogate models.</p>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="field">
+          <label for="freq">Resonant Frequency</label>
+          <div class="field-row">
+            <input type="number" id="freq" value="2.4" step="0.01" min="0.1">
+            <span class="unit">GHz</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="epsilon">Substrate Material</label>
+          <select id="epsilon">
+            <option value="4.4">FR-4 (εr = 4.4)</option>
+            <option value="2.2">RT/duroid 5880 (εr = 2.2)</option>
+            <option value="10.2">RT/duroid 6010 (εr = 10.2)</option>
+            <option value="3.38">Rogers RO4003C (εr = 3.38)</option>
+            <option value="custom">Custom εr</option>
+          </select>
+        </div>
+
+        <div class="field" id="customEpsilonField" style="display:none;">
+          <label for="customEpsilon">Custom Dielectric Constant (εr)</label>
+          <input type="number" id="customEpsilon" value="4.4" step="0.01" min="1">
+        </div>
+
+        <div class="field">
+          <label for="height">Substrate Height</label>
+          <div class="field-row">
+            <input type="number" id="height" value="1.6" step="0.01" min="0.01">
+            <span class="unit">mm</span>
+          </div>
+        </div>
+
+        <button class="calc-btn" onclick="calculate()">Calculate dimensions →</button>
+      </div>
+
+      <div class="panel" id="resultsPanel">
+        <div class="results-empty" id="emptyState">
+          <div style="font-size:24px;">◈</div>
+          <div>Enter your parameters and calculate<br>to see patch dimensions here</div>
+        </div>
+
+        <div id="resultsContent" style="display:none;">
+          <div class="result-row">
+            <div class="result-label">Patch Width (W)<span class="hint">Radiating edge dimension</span></div>
+            <div class="result-value" id="rW">—<span class="unit-small">mm</span></div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">Patch Length (L)<span class="hint">Resonant dimension</span></div>
+            <div class="result-value" id="rL">—<span class="unit-small">mm</span></div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">Effective Dielectric Constant (εeff)<span class="hint">Accounts for fringing fields</span></div>
+            <div class="result-value" id="rEeff">—</div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">Length Extension (ΔL)<span class="hint">Fringing field correction</span></div>
+            <div class="result-value" id="rDeltaL">—<span class="unit-small">mm</span></div>
+          </div>
+          <div class="result-row">
+            <div class="result-label">Recommended Ground Plane<span class="hint">Minimum Lg × Wg</span></div>
+            <div class="result-value" id="rGround">—<span class="unit-small">mm</span></div>
+          </div>
+          <div class="note" id="resultNote"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="method">
+      <h2>Method</h2>
+      <p>Patch width comes from <code>W = c / (2·fr) · √(2/(εr+1))</code>, then the effective dielectric constant <code>εeff</code> is derived from the width-to-height ratio to account for the fringing fields at the patch edges.</p>
+      <p>The length extension <code>ΔL</code> corrects for that same fringing effect, and the final patch length is <code>L = c / (2·fr·√εeff) − 2ΔL</code>. Ground plane dimensions add a 6h margin on each side, which is standard practice to avoid truncating the fringing fields.</p>
+      <p>This gives you a solid starting point for simulation in tools like HFSS or CST — treat it as a first-pass estimate, not a final fabrication value.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">SIGNAL &amp; SPAN — ANTENNA DIMENSION DESIGNER</div>
+</footer>
+
+<script>
+  const epsilonSelect = document.getElementById('epsilon');
+  const customField = document.getElementById('customEpsilonField');
+  epsilonSelect.addEventListener('change', () => {
+    customField.style.display = epsilonSelect.value === 'custom' ? 'block' : 'none';
+  });
+
+  function calculate(){
+    const freqGHz = parseFloat(document.getElementById('freq').value);
+    const heightMm = parseFloat(document.getElementById('height').value);
+    let epsilonR;
+    if (epsilonSelect.value === 'custom'){
+      epsilonR = parseFloat(document.getElementById('customEpsilon').value);
+    } else {
+      epsilonR = parseFloat(epsilonSelect.value);
+    }
+
+    if (!freqGHz || !heightMm || !epsilonR || freqGHz <= 0 || heightMm <= 0 || epsilonR <= 1){
+      alert('Please enter valid positive values (εr must be greater than 1).');
+      return;
+    }
+
+    const c = 3e8; // speed of light, m/s
+    const fr = freqGHz * 1e9; // Hz
+    const h = heightMm / 1000; // m
+
+    // Patch width
+    const W = (c / (2 * fr)) * Math.sqrt(2 / (epsilonR + 1));
+
+    // Effective dielectric constant
+    const eEff = (epsilonR + 1) / 2 + ((epsilonR - 1) / 2) * Math.pow(1 + 12 * h / W, -0.5);
+
+    // Length extension
+    const deltaL = 0.412 * h * ((eEff + 0.3) * (W / h + 0.264)) / ((eEff - 0.258) * (W / h + 0.8));
+
+    // Patch length
+    const L = (c / (2 * fr * Math.sqrt(eEff))) - (2 * deltaL);
+
+    // Ground plane (6h margin each side, standard practice)
+    const Lg = L + 6 * h;
+    const Wg = W + 6 * h;
+
+    document.getElementById('rW').innerHTML = (W * 1000).toFixed(2) + '<span class="unit-small">mm</span>';
+    document.getElementById('rL').innerHTML = (L * 1000).toFixed(2) + '<span class="unit-small">mm</span>';
+    document.getElementById('rEeff').textContent = eEff.toFixed(3);
+    document.getElementById('rDeltaL').innerHTML = (deltaL * 1000).toFixed(3) + '<span class="unit-small">mm</span>';
+    document.getElementById('rGround').innerHTML = (Lg * 1000).toFixed(1) + ' × ' + (Wg * 1000).toFixed(1) + '<span class="unit-small">mm</span>';
+    document.getElementById('resultNote').textContent = 'At ' + freqGHz + ' GHz on εr = ' + epsilonR + ', h = ' + heightMm + 'mm substrate. Feed point placement and impedance matching are the next step for a working design.';
+
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('resultsContent').style.display = 'block';
+  }
+</script>
+
+</body>
+</html>

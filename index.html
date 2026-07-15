@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal &amp; Span — RF &amp; Telecom Engineering Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#121a24;
+    --ink-2:#182230;
+    --surface:#1b2530;
+    --surface-2:#212d3a;
+    --line:#2c3948;
+    --amber:#ffb020;
+    --amber-dim:#8a6420;
+    --teal:#4fd1c5;
+    --text:#e9edf2;
+    --text-muted:#8fa0b3;
+    --text-faint:#5c6c7d;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --sans:'IBM Plex Sans', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+
+  /* graph-paper texture */
+  .grid-bg{
+    background-image:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size:34px 34px;
+  }
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(18,26,36,0.88);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;height:68px;}
+  .logo{
+    font-family:var(--mono);font-weight:600;font-size:16px;letter-spacing:0.02em;
+    display:flex;align-items:center;gap:10px;
+  }
+  .logo-mark{
+    width:20px;height:20px;
+    border:1.5px solid var(--amber);border-radius:50%;
+    position:relative;flex-shrink:0;
+  }
+  .logo-mark::after{
+    content:'';position:absolute;inset:5px;
+    background:var(--amber);border-radius:50%;
+  }
+  .navlinks{display:flex;gap:32px;font-size:14px;color:var(--text-muted);}
+  .navlinks a:hover{color:var(--amber);}
+  .nav-cta{
+    font-family:var(--mono);font-size:13px;padding:9px 16px;
+    border:1px solid var(--amber-dim);border-radius:3px;color:var(--amber);
+    transition:border-color .15s, background .15s;
+  }
+  .nav-cta:hover{border-color:var(--amber);background:rgba(255,176,32,0.08);}
+
+  /* ---------- hero ---------- */
+  .hero{
+    padding:96px 0 80px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero .wrap{
+    display:grid;grid-template-columns:1.05fr 0.95fr;gap:40px;align-items:center;
+  }
+  .eyebrow{
+    font-family:var(--mono);font-size:12.5px;color:var(--teal);
+    letter-spacing:0.12em;text-transform:uppercase;
+    display:flex;align-items:center;gap:10px;margin-bottom:22px;
+  }
+  .eyebrow::before{
+    content:'';width:26px;height:1px;background:var(--teal);
+  }
+  h1{
+    font-family:var(--mono);font-weight:700;
+    font-size:clamp(34px,4.2vw,52px);
+    line-height:1.08;letter-spacing:-0.01em;
+    margin-bottom:22px;
+  }
+  h1 .accent{color:var(--amber);}
+  .hero-sub{
+    font-size:17px;color:var(--text-muted);max-width:480px;margin-bottom:34px;
+  }
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap;}
+  .btn{
+    font-family:var(--mono);font-size:14px;font-weight:500;
+    padding:13px 22px;border-radius:3px;
+    display:inline-flex;align-items:center;gap:8px;
+    transition:transform .15s, background .15s, border-color .15s;
+  }
+  .btn-primary{background:var(--amber);color:#1a1206;}
+  .btn-primary:hover{transform:translateY(-1px);background:#ffc04d;}
+  .btn-ghost{border:1px solid var(--line);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--text-muted);}
+
+  .credentials{
+    display:flex;gap:22px;margin-top:44px;padding-top:28px;
+    border-top:1px solid var(--line);
+  }
+  .cred{font-family:var(--mono);}
+  .cred-num{font-size:22px;font-weight:700;color:var(--teal);}
+  .cred-label{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
+
+  /* radiation pattern svg */
+  .pattern-box{
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pattern-box svg{width:100%;max-width:420px;height:auto;}
+  .sweep{
+    transform-origin:210px 210px;
+    animation:sweep 4s linear infinite;
+  }
+  @keyframes sweep{
+    from{transform:rotate(0deg);}
+    to{transform:rotate(360deg);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .sweep{animation:none;}
+  }
+
+  /* ---------- section shared ---------- */
+  section{padding:88px 0;}
+  .section-head{margin-bottom:48px;max-width:620px;}
+  .section-eyebrow{
+    font-family:var(--mono);font-size:12px;color:var(--amber);
+    text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;
+  }
+  h2{
+    font-family:var(--mono);font-weight:700;font-size:clamp(24px,3vw,32px);
+    letter-spacing:-0.01em;margin-bottom:14px;
+  }
+  .section-desc{color:var(--text-muted);font-size:15.5px;}
+
+  .divider{border-top:1px solid var(--line);}
+
+  /* ---------- tools ---------- */
+  .tools-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);
+  }
+  .tool-card{
+    background:var(--ink);padding:34px 30px;
+    display:flex;flex-direction:column;gap:16px;
+    transition:background .15s;
+  }
+  .tool-card:hover{background:var(--surface);}
+  .tool-index{font-family:var(--mono);font-size:12px;color:var(--text-faint);}
+  .tool-icon{
+    width:38px;height:38px;border:1px solid var(--line);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;color:var(--teal);
+  }
+  .tool-card h3{font-family:var(--mono);font-size:17px;font-weight:600;margin-top:4px;}
+  .tool-card p{font-size:14px;color:var(--text-muted);flex-grow:1;}
+  .tool-status{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:0.04em;
+    display:flex;align-items:center;gap:7px;margin-top:6px;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);}
+  .dot.building{background:var(--amber);}
+  .tool-link{
+    font-family:var(--mono);font-size:13.5px;color:var(--amber);
+    display:flex;align-items:center;gap:6px;margin-top:auto;
+  }
+
+  /* ---------- notes ---------- */
+  .notes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  .note-card{
+    border:1px solid var(--line);border-radius:6px;padding:26px;
+    background:var(--surface);
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .note-tag{
+    font-family:var(--mono);font-size:11px;color:var(--text-faint);
+    text-transform:uppercase;letter-spacing:0.06em;
+  }
+  .note-card h4{font-size:16px;font-weight:600;line-height:1.35;}
+  .note-card p{font-size:13.5px;color:var(--text-muted);}
+  .note-read{font-family:var(--mono);font-size:12.5px;color:var(--teal);margin-top:auto;}
+
+  /* ---------- about ---------- */
+  .about-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;
+  }
+  .about-text p{color:var(--text-muted);font-size:15.5px;margin-bottom:16px;}
+  .badge-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;}
+  .badge{
+    font-family:var(--mono);font-size:12.5px;padding:8px 14px;
+    border:1px solid var(--line);border-radius:20px;color:var(--text-muted);
+    display:flex;align-items:center;gap:7px;
+  }
+  .badge .dot{background:var(--teal);}
+  .link-list{display:flex;flex-direction:column;gap:0;}
+  .link-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 0;border-bottom:1px solid var(--line);
+  }
+  .link-row:first-child{padding-top:0;}
+  .link-name{font-family:var(--mono);font-size:14.5px;}
+  .link-desc{font-size:13px;color:var(--text-faint);margin-top:3px;}
+  .link-arrow{color:var(--amber);font-family:var(--mono);}
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top:1px solid var(--line);padding:36px 0;
+  }
+  .footer-row{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:var(--mono);font-size:12.5px;color:var(--text-faint);
+  }
+
+  @media (max-width: 860px){
+    .hero .wrap{grid-template-columns:1fr;}
+    .pattern-box{order:-1;}
+    .tools-grid{grid-template-columns:1fr;}
+    .notes-grid{grid-template-columns:1fr;}
+    .about-grid{grid-template-columns:1fr;}
+    .navlinks{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="logo-mark"></span>SIGNAL &amp; SPAN</div>
+    <nav class="navlinks">
+      <a href="#tools">Tools</a>
+      <a href="#notes">Notes</a>
+      <a href="#about">About</a>
+    </nav>
+    <a href="#tools" class="nav-cta">Open a tool →</a>
+  </div>
+</header>
+
+<section class="hero grid-bg">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">RF &amp; Telecom Engineering, in the browser</div>
+      <h1>Tools for the math you<br>shouldn't do <span class="accent">by hand.</span></h1>
+      <p class="hero-sub">Antenna dimensioning, link budgets, and network diagnostics — free calculators built on real models, for engineers, students, and anyone studying for the exam.</p>
+      <div class="hero-actions">
+        <a href="#tools" class="btn btn-primary">Browse tools →</a>
+        <a href="#about" class="btn btn-ghost">Why I built this</a>
+      </div>
+      <div class="credentials">
+        <div class="cred"><div class="cred-num">3</div><div class="cred-label">Tools live</div></div>
+        <div class="cred"><div class="cred-num">EA</div><div class="cred-label">Assessed Engineer</div></div>
+        <div class="cred"><div class="cred-num">$0</div><div class="cred-label">Cost to use</div></div>
+      </div>
+    </div>
+
+    <div class="pattern-box">
+      <svg viewBox="0 0 420 420" fill="none">
+        <circle cx="210" cy="210" r="180" stroke="#2c3948" stroke-width="1"/>
+        <circle cx="210" cy="210" r="135" stroke="#2c3948" stroke-width="1"/>
+        <circle cx="210" cy="210" r="90" stroke="#2c3948" stroke-width="1"/>
+        <circle cx="210" cy="210" r="45" stroke="#2c3948" stroke-width="1"/>
+        <line x1="30" y1="210" x2="390" y2="210" stroke="#2c3948" stroke-width="1"/>
+        <line x1="210" y1="30" x2="210" y2="390" stroke="#2c3948" stroke-width="1"/>
+        <line x1="72" y1="72" x2="348" y2="348" stroke="#232f3c" stroke-width="1"/>
+        <line x1="72" y1="348" x2="348" y2="72" stroke="#232f3c" stroke-width="1"/>
+        <!-- radiation lobe pattern -->
+        <path d="M210,210
+                 C260,205 300,150 210,40
+                 C120,150 160,205 210,210 Z"
+              fill="rgba(255,176,32,0.12)" stroke="#ffb020" stroke-width="1.5"/>
+        <path d="M210,210
+                 C230,230 220,270 210,300
+                 C200,270 190,230 210,210 Z"
+              fill="rgba(79,209,197,0.10)" stroke="#4fd1c5" stroke-width="1"/>
+        <g class="sweep">
+          <line x1="210" y1="210" x2="210" y2="32" stroke="#ffb020" stroke-width="1.5" opacity="0.9"/>
+          <circle cx="210" cy="32" r="3" fill="#ffb020"/>
+        </g>
+        <circle cx="210" cy="210" r="3.5" fill="#e9edf2"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="tools" class="grid-bg">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">Toolbox</div>
+      <h2>Pick a problem, get a number</h2>
+      <p class="section-desc">Every tool runs a real model behind a simple form — no sign-up, no spreadsheet.</p>
+    </div>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div class="tool-icon">◈</div>
+          <span class="tool-index">01</span>
+        </div>
+        <h3>Antenna Dimension Designer</h3>
+        <p>Enter target frequency and substrate properties, get microstrip patch antenna dimensions back from a trained Random Forest surrogate model.</p>
+        <div class="tool-status"><span class="dot"></span>LIVE</div>
+        <a href="antenna-designer.html" class="tool-link">Open designer →</a>
+      </div>
+
+      <div class="tool-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div class="tool-icon">≋</div>
+          <span class="tool-index">02</span>
+        </div>
+        <h3>Link Budget Calculator</h3>
+        <p>Work out received signal strength across a path — transmit power, gains, losses, and margin, laid out the way you'd check it before a deployment.</p>
+        <div class="tool-status"><span class="dot building"></span>BUILDING</div>
+        <a href="#" class="tool-link">Preview →</a>
+      </div>
+
+      <div class="tool-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div class="tool-icon">◐</div>
+          <span class="tool-index">03</span>
+        </div>
+        <h3>Network Health Monitor</h3>
+        <p>A live demo of anomaly detection on network traffic using Isolation Forest — feed it sample metrics and watch it flag what doesn't belong.</p>
+        <div class="tool-status"><span class="dot building"></span>BUILDING</div>
+        <a href="#" class="tool-link">Preview →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="notes">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">Field Notes</div>
+      <h2>Short write-ups on how the tools work</h2>
+      <p class="section-desc">The math behind each calculator, explained without the textbook detour.</p>
+    </div>
+
+    <div class="notes-grid">
+      <div class="note-card">
+        <span class="note-tag">Antennas</span>
+        <h4>How to size a microstrip patch antenna by hand — and where the shortcuts break</h4>
+        <p>The classic formulas, and why a data-driven model gets closer to lab results.</p>
+        <span class="note-read">Read note →</span>
+      </div>
+      <div class="note-card">
+        <span class="note-tag">Link Budgets</span>
+        <h4>Reading a link budget like a checklist, not an equation</h4>
+        <p>Every term explained in plain language before the plain math.</p>
+        <span class="note-read">Read note →</span>
+      </div>
+      <div class="note-card">
+        <span class="note-tag">Networking</span>
+        <h4>What "anomaly detection" actually flags on a real network</h4>
+        <p>A walkthrough of Isolation Forest using traffic anyone can picture.</p>
+        <span class="note-read">Read note →</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="about" class="grid-bg">
+  <div class="wrap about-grid">
+    <div class="about-text">
+      <div class="section-eyebrow">About</div>
+      <h2>Built by an engineer, for engineers</h2>
+      <p>I'm a Telecommunications Engineer, assessed by Engineers Australia as a Professional Engineer. I built these tools first for my own work — then again, properly, so anyone studying or working in RF and networking could use them without opening a textbook.</p>
+      <p>Every tool here started as a project I actually built end-to-end: the models, the code, and the write-ups. If it's useful to you, that's the whole point.</p>
+      <div class="badge-row">
+        <span class="badge"><span class="dot"></span>EA Professional Engineer — 233310</span>
+        <span class="badge"><span class="dot"></span>B.Eng Electrical &amp; Telecom</span>
+      </div>
+    </div>
+
+    <div class="link-list">
+      <div class="link-row">
+        <div><div class="link-name">GitHub</div><div class="link-desc">Source code for every tool on this site</div></div>
+        <span class="link-arrow">→</span>
+      </div>
+      <div class="link-row">
+        <div><div class="link-name">LinkedIn</div><div class="link-desc">Engineering background &amp; project write-ups</div></div>
+        <span class="link-arrow">→</span>
+      </div>
+      <div class="link-row">
+        <div><div class="link-name">Contact</div><div class="link-desc">Suggest a tool or report a bug</div></div>
+        <span class="link-arrow">→</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <span>SIGNAL &amp; SPAN — RF &amp; TELECOM TOOLS</span>
+    <span>PERTH, AUSTRALIA</span>
+  </div>
+</footer>
+
+</body>
+</html>
