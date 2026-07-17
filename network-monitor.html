@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Health Monitor — Signal &amp; Span</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#121a24; --surface:#1b2530; --surface-2:#212d3a; --line:#2c3948;
+    --amber:#ffb020; --amber-dim:#8a6420; --teal:#4fd1c5; --red:#f87171;
+    --text:#e9edf2; --text-muted:#8fa0b3; --text-faint:#5c6c7d;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --sans:'IBM Plex Sans', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none;}
+  .grid-bg{
+    background-image:linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size:34px 34px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px;}
+  header{position:sticky;top:0;z-index:50;background:rgba(18,26,36,0.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .logo{font-family:var(--mono);font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px;}
+  .logo-mark{width:18px;height:18px;border:1.5px solid var(--amber);border-radius:50%;position:relative;}
+  .logo-mark::after{content:'';position:absolute;inset:4px;background:var(--amber);border-radius:50%;}
+  .back{font-family:var(--mono);font-size:13px;color:var(--text-muted);}
+  .back:hover{color:var(--amber);}
+
+  main{padding:56px 0 100px;}
+  .eyebrow{font-family:var(--mono);font-size:12px;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .eyebrow::before{content:'';width:26px;height:1px;background:var(--teal);}
+  h1{font-family:var(--mono);font-weight:700;font-size:clamp(26px,3.6vw,36px);margin-bottom:14px;letter-spacing:-0.01em;}
+  .sub{color:var(--text-muted);font-size:15.5px;max-width:640px;margin-bottom:12px;}
+  .disclaimer{
+    font-size:13px;color:var(--text-faint);max-width:640px;margin-bottom:36px;
+    padding:10px 14px;background:var(--surface-2);border-left:2px solid var(--teal);border-radius:0 4px 4px 0;
+  }
+
+  .controls{display:flex;gap:14px;margin-bottom:32px;flex-wrap:wrap;align-items:center;}
+  .btn{
+    font-family:var(--mono);font-size:13.5px;font-weight:600;padding:12px 20px;border-radius:4px;
+    cursor:pointer;transition:background .15s, transform .15s;border:none;
+  }
+  .btn-primary{background:var(--amber);color:#1a1206;}
+  .btn-primary:hover{background:#ffc04d;transform:translateY(-1px);}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text-muted);}
+  .btn-ghost:hover{border-color:var(--text-muted);color:var(--text);}
+  .sensitivity-label{font-family:var(--mono);font-size:12.5px;color:var(--text-muted);display:flex;align-items:center;gap:8px;}
+  input[type=range]{accent-color:var(--amber);}
+
+  .chart-panel{
+    border:1px solid var(--line);border-radius:6px;background:var(--surface);
+    padding:30px 24px 20px;margin-bottom:24px;
+  }
+  .chart-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px;}
+  .chart-title{font-family:var(--mono);font-size:13.5px;color:var(--text-muted);}
+  .chart-legend{display:flex;gap:18px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);}
+  .legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+
+  .bars{display:flex;align-items:flex-end;gap:4px;height:220px;padding-bottom:2px;border-bottom:1px solid var(--line);}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative;}
+  .bar{
+    width:100%;max-width:22px;background:var(--teal);border-radius:2px 2px 0 0;
+    transition:height .3s ease;
+  }
+  .bar.anomaly{background:var(--red);}
+  .bar-col:hover .tooltip{opacity:1;}
+  .tooltip{
+    position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:4px;
+    padding:6px 10px;font-family:var(--mono);font-size:11px;white-space:nowrap;
+    opacity:0;transition:opacity .15s;pointer-events:none;z-index:5;
+  }
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:24px;}
+  .stat{background:var(--ink);padding:20px 22px;}
+  .stat-label{font-family:var(--mono);font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
+  .stat-value{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--text);}
+  .stat-value.flag{color:var(--red);}
+
+  .events-panel{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:24px;}
+  .events-panel h3{font-family:var(--mono);font-size:14px;margin-bottom:14px;color:var(--text-muted);}
+  .event-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:11px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px;
+  }
+  .event-row:last-child{border-bottom:none;}
+  .event-time{color:var(--text-faint);min-width:70px;}
+  .event-detail{color:var(--text-muted);flex:1;text-align:left;padding:0 12px;}
+  .event-score{color:var(--red);font-weight:600;}
+  .no-events{color:var(--text-faint);font-size:13px;font-family:var(--mono);text-align:center;padding:20px 0;}
+
+  .method{margin-top:56px;padding-top:36px;border-top:1px solid var(--line);}
+  .method h2{font-family:var(--mono);font-size:18px;margin-bottom:14px;}
+  .method p{color:var(--text-muted);font-size:14.5px;margin-bottom:12px;max-width:700px;}
+  .method code{font-family:var(--mono);background:var(--surface);padding:2px 6px;border-radius:3px;color:var(--teal);font-size:13px;}
+
+  footer{border-top:1px solid var(--line);padding:30px 0;font-family:var(--mono);font-size:12px;color:var(--text-faint);}
+
+  @media (max-width:700px){
+    .stats-row{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="logo-mark"></span>SIGNAL &amp; SPAN</div>
+    <a href="index.html" class="back">← All tools</a>
+  </div>
+</header>
+
+<main class="grid-bg">
+  <div class="wrap">
+    <div class="eyebrow">Tool 03 — Networking</div>
+    <h1>Network Health Monitor</h1>
+    <p class="sub">A simplified, browser-based demo of anomaly detection on network traffic. Generate sample traffic and watch the detector flag readings that don't fit the pattern.</p>
+    <div class="disclaimer">This runs a lightweight statistical detector (z-score against a rolling baseline) for a fast, dependency-free browser demo. The full project uses a trained Isolation Forest model — see the source on GitHub for that implementation.</div>
+
+    <div class="controls">
+      <button class="btn btn-primary" onclick="generateTraffic()">Generate sample traffic →</button>
+      <button class="btn btn-ghost" onclick="injectAnomaly()">Inject an anomaly</button>
+      <div class="sensitivity-label">
+        Sensitivity
+        <input type="range" id="sensitivity" min="1.5" max="3.5" step="0.1" value="2.2" oninput="reevaluate()">
+        <span id="sensitivityVal">2.2σ</span>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <div class="chart-header">
+        <span class="chart-title">Requests / second — last 30 intervals</span>
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:var(--teal);"></span>Normal</span>
+          <span><span class="legend-dot" style="background:var(--red);"></span>Flagged</span>
+        </div>
+      </div>
+      <div class="bars" id="bars"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="stat-label">Baseline Mean</div><div class="stat-value" id="statMean">—</div></div>
+      <div class="stat"><div class="stat-label">Std. Deviation</div><div class="stat-value" id="statStd">—</div></div>
+      <div class="stat"><div class="stat-label">Data Points</div><div class="stat-value" id="statCount">—</div></div>
+      <div class="stat"><div class="stat-label">Anomalies Flagged</div><div class="stat-value flag" id="statFlags">—</div></div>
+    </div>
+
+    <div class="events-panel">
+      <h3>Flagged events</h3>
+      <div id="eventsList"><div class="no-events">Generate traffic to see results</div></div>
+    </div>
+
+    <div class="method">
+      <h2>Method</h2>
+      <p>This browser demo computes a rolling mean and standard deviation across the traffic series, then flags any point whose z-score — <code>|x − mean| / std</code> — exceeds the sensitivity threshold set by the slider. It's a fast approximation that runs entirely client-side with no model to load.</p>
+      <p>The production version of this project uses <code>Isolation Forest</code>, an unsupervised model that isolates anomalies by how few random splits it takes to separate a point from the rest of the data — points that isolate quickly, in fewer splits, score as more anomalous. This catches multivariate and non-linear anomaly patterns that a simple z-score threshold can miss.</p>
+      <p>Full training code and the multivariate version of this model are in the GitHub repository linked from the homepage.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">SIGNAL &amp; SPAN — NETWORK HEALTH MONITOR</div>
+</footer>
+
+<script>
+  let data = [];
+
+  function gaussianRandom(mean, std){
+    let u = 1 - Math.random();
+    let v = Math.random();
+    let z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    return mean + z * std;
+  }
+
+  function generateTraffic(){
+    data = [];
+    const baseline = 400;
+    const std = 35;
+    for (let i = 0; i < 30; i++){
+      let val = gaussianRandom(baseline, std);
+      data.push(Math.max(0, Math.round(val)));
+    }
+    // seed one natural-looking spike near the end so first render isn't boring
+    data[Math.floor(Math.random() * 6) + 22] = Math.round(baseline + std * (3 + Math.random() * 1.5));
+    reevaluate();
+  }
+
+  function injectAnomaly(){
+    if (data.length === 0){
+      generateTraffic();
+    }
+    const idx = Math.floor(Math.random() * data.length);
+    const direction = Math.random() > 0.5 ? 1 : -1;
+    const spike = 300 + Math.random() * 200;
+    data[idx] = Math.max(0, Math.round(data[idx] + direction * spike));
+    reevaluate();
+  }
+
+  function reevaluate(){
+    const sensitivity = parseFloat(document.getElementById('sensitivity').value);
+    document.getElementById('sensitivityVal').textContent = sensitivity.toFixed(1) + 'σ';
+
+    if (data.length === 0) return;
+
+    const mean = data.reduce((a,b) => a+b, 0) / data.length;
+    const variance = data.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / data.length;
+    const std = Math.sqrt(variance);
+
+    const scored = data.map((val, i) => {
+      const z = std === 0 ? 0 : Math.abs(val - mean) / std;
+      return { val, i, z, isAnomaly: z >= sensitivity };
+    });
+
+    const maxVal = Math.max(...data, 1);
+    const barsEl = document.getElementById('bars');
+    barsEl.innerHTML = '';
+    scored.forEach(pt => {
+      const col = document.createElement('div');
+      col.className = 'bar-col';
+      const heightPct = Math.max(4, (pt.val / maxVal) * 100);
+      col.innerHTML = `
+        <div class="tooltip">t=${pt.i} · ${pt.val} req/s · z=${pt.z.toFixed(2)}</div>
+        <div class="bar ${pt.isAnomaly ? 'anomaly' : ''}" style="height:${heightPct}%"></div>
+      `;
+      barsEl.appendChild(col);
+    });
+
+    const flags = scored.filter(p => p.isAnomaly);
+    document.getElementById('statMean').textContent = mean.toFixed(1);
+    document.getElementById('statStd').textContent = std.toFixed(1);
+    document.getElementById('statCount').textContent = data.length;
+    document.getElementById('statFlags').textContent = flags.length;
+
+    const eventsList = document.getElementById('eventsList');
+    if (flags.length === 0){
+      eventsList.innerHTML = '<div class="no-events">No anomalies at current sensitivity</div>';
+    } else {
+      eventsList.innerHTML = flags.map(f => `
+        <div class="event-row">
+          <span class="event-time">t=${f.i}</span>
+          <span class="event-detail">${f.val} req/s — ${f.val > mean ? 'traffic spike' : 'traffic drop'}</span>
+          <span class="event-score">z=${f.z.toFixed(2)}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  generateTraffic();
+</script>
+
+</body>
+</html>
